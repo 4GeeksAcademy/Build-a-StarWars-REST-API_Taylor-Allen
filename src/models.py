@@ -24,12 +24,11 @@ class User(db.Model):
     __tablename__ = "user"    
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
+    password = db.Column(db.String(128), nullable=False) 
     is_active = db.Column(db.Boolean(), unique=False, nullable=False)
     favorite_people = db.relationship('People', secondary=favorite_people)
     favorite_planets = db.relationship('Planet', secondary=favorite_planets)
     favorite_vehicles = db.relationship('Vehicle', secondary=favorite_vehicles)
-
 
     def __repr__(self):
         return '<User %r>' % self.email
@@ -40,8 +39,8 @@ class User(db.Model):
             "email": self.email,
             "favorite_people": [x.serialize() for x in self.favorite_people],
             "favorite_planets": [x.serialize() for x in self.favorite_planets],
-            "favorite_vehicles": [x.serialize() for x in self.favorite_vehicles]
-            # do not serialize the password, its a security breach
+            "favorite_vehicles": [x.serialize() for x in self.favorite_vehicles],
+            "password": "********"
         }
 
 class Vehicle(db.Model):

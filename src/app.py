@@ -8,7 +8,7 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, People, Planet, Vehicle
 #from models import Person
 
 app = Flask(__name__)
@@ -38,9 +38,85 @@ def sitemap():
 
 @app.route('/user', methods=['GET'])
 def handle_hello():
-
+    users = db.session.execute(db.select(User).order_by(User.email)).scalars()
+    user_list = [user.serialize() for user in users]
     response_body = {
-        "msg": "Hello, this is your GET /user response "
+        "msg": " User List ",
+        "results": user_list}
+
+    return jsonify(response_body), 200
+
+@app.route('/user/favorites', methods=['GET'])
+def get_all_favorites():
+    user_id = request.json['user_id']
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        response_body = {
+            "msg": "This user was not found"}
+        return jsonify(response_body), 404
+    favorites = {
+        "planets": [x.serialize() for x in user.favorite_planets],
+        "people": [x.serialize() for x in user.favorite_people],
+        "vehicles": [x.serialize() for x in user.favorite_vehicles],
+    }
+    response_body = {
+        "msg": "These are your favorites",
+        "favorites": favorites
+    }
+    return jsonify(response_body), 200
+
+@app.route('/people', methods=['GET'])
+def get_people():
+    people = db.session.execute(db.select(People).order_by(People.name)).scalars()
+    people_list = [person.serialize() for person in people]
+    response_body = {
+        "msg": " People List ",
+        "results": people_list}
+    
+    return jsonify(response_body), 200
+
+@app.route('/people/<int:people_id>', methods=['GET'])
+def get_person(people_id): 
+    person = People.query.filter_by(id=people_id).first()
+    if person is None:
+        response_body = {
+        "msg": " This person does not exist "}
+        return jsonify(response_body), 404
+    response_body = {
+        "msg": " Here is your person ",
+        "result": person.serialize()}
+    return jsonify(response_body), 200
+
+@app.route('/favorites/people/<int:people_id>', methods=['POST'])
+def add_favorite_people(people_id):
+    user_id = request.json['user_id']
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return jsonify({"msg": "This user was not found"}), 404
+    
+    person = People.query.filter_by(id=people_id).first()
+    if person is None:
+        return jsonify({"msg": "This person was not found"}), 404
+    
+    if user.favorite_people is None:
+        user.favorite_people = []
+
+    if person in user.favorite_people:
+        return jsonify({"msg": "This person already in favorites"}), 409
+    user.favorite_people.append(person)
+    response_body = {
+        "msg": " Here are your favorite people ",
+        "result": [x.serialize() for x in user.favorite_people]
+    }
+    return jsonify(response_body), 201
+
+@app.route('/planets', methods=['GET'])
+def get_planets():
+    planet = db.session.execute(db.select(Planet).order_by(Planet.name)).scalars()
+    planets_list = [planet.serialize() for planet in planet]
+    response_body = {
+        "msg": " Planet List ",
+        "results": planets_list
     }
 
     return jsonify(response_body), 200
