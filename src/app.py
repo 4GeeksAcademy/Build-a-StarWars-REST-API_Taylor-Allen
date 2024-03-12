@@ -121,6 +121,29 @@ def get_planets():
 
     return jsonify(response_body), 200
 
+@app.route('/favorites/planets/<int:planets_id>', methods=['POST'])
+def add_favorite_planets(planets_id):
+    user_id = request.json['user_id']
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return jsonify({"msg": "This user was not found"}), 404
+    
+    planets = planets.query.filter_by(id=planets_id).first()
+    if planets is None:
+        return jsonify({"msg": "This planet was not found"}), 404
+    
+    if user.favorite_planets is None:
+        user.favorite_planets = []
+
+    if planets in user.favorite_planets:
+        return jsonify({"msg": "This planet is already in favorites"}), 409
+    user.favorite_planets.append(planets)
+    response_body = {
+        "msg": " Here are your favorite planets ",
+        "result": [x.serialize() for x in user.favorite_planets]
+    }
+    return jsonify(response_body), 201
+
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
